@@ -16,8 +16,10 @@
 package com.alibaba.cloud.ai.graph.serializer.plain_text.jackson;
 
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.content.Media;
 
 import java.io.IOException;
+import java.util.List;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -31,7 +33,9 @@ import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
+import static com.alibaba.cloud.ai.graph.serializer.plain_text.jackson.SerializationHelper.deserializeMediaList;
 import static com.alibaba.cloud.ai.graph.serializer.plain_text.jackson.SerializationHelper.deserializeMetadata;
+import static com.alibaba.cloud.ai.graph.serializer.plain_text.jackson.SerializationHelper.serializeMediaList;
 import static com.alibaba.cloud.ai.graph.serializer.plain_text.jackson.SerializationHelper.serializeMetadata;
 
 public interface UserMessageHandler {
@@ -68,15 +72,18 @@ public interface UserMessageHandler {
 			typeSer.writeTypeSuffix(gen, typeIdDef);
 		}
 
+		/**
+		 * ★ 序列化 UserMessage 全部字段，含多模态 media（图片等）。
+		 * <p>
+		 * 修复说明：原实现将 media 序列化代码注释掉，导致 cloneState 深拷贝
+		 * （通过 JSON 序列化/反序列化）时多模态 UserMessage 的 media 丢失，
+		 * 模型收不到图片。此处恢复 media 序列化。
+		 * </p>
+		 */
 		private void serializeFields(UserMessage msg, JsonGenerator gen, SerializerProvider provider) throws IOException {
 			gen.writeStringField(Field.TEXT.name, msg.getText());
 			serializeMetadata(gen, msg.getMetadata());
-
-			// gen.writeArrayFieldStart( Property.MEDIA.field);
-			// for (var media : msg.getMedia()) {
-			// gen.writeObject(media);
-			// }
-			// gen.writeEndArray();
+			serializeMediaList(gen, msg.getMedia());
 		}
 	}
 
@@ -86,6 +93,9 @@ public interface UserMessageHandler {
 			super(UserMessage.class);
 		}
 
+		/**
+		 * ★ 反序列化 UserMessage，恢复多模态 media（图片等）。
+		 */
 		@Override
 		public UserMessage deserialize(JsonParser jsonParser, DeserializationContext ctx) throws IOException {
 			var mapper = (ObjectMapper) jsonParser.getCodec();
@@ -93,9 +103,12 @@ public interface UserMessageHandler {
 
 			var text = node.findValue(Field.TEXT.name).asText();
 			var metadata = deserializeMetadata(mapper, node);
+			List<Media> mediaList = deserializeMediaList(node);
 
-			return UserMessage.builder().text(text).metadata(metadata).build();
-
+			if (mediaList.isEmpty()) {
+				return UserMessage.builder().text(text).metadata(metadata).build();
+			}
+			return UserMessage.builder().text(text).metadata(metadata).media(mediaList).build();
 		}
 
 	}

@@ -15,8 +15,9 @@
  */
 package com.alibaba.cloud.ai.graph.serializer.plain_text.jackson;
 
-import java.io.IOException;
-import java.util.LinkedList;
+import org.springframework.ai.content.Media;
+
+import java.util.List;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -34,7 +35,9 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import org.springframework.ai.chat.messages.AssistantMessage;
 
+import static com.alibaba.cloud.ai.graph.serializer.plain_text.jackson.SerializationHelper.deserializeMediaList;
 import static com.alibaba.cloud.ai.graph.serializer.plain_text.jackson.SerializationHelper.deserializeMetadata;
+import static com.alibaba.cloud.ai.graph.serializer.plain_text.jackson.SerializationHelper.serializeMediaList;
 import static com.alibaba.cloud.ai.graph.serializer.plain_text.jackson.SerializationHelper.serializeMetadata;
 
 public interface AssistantMessageHandler {
@@ -86,12 +89,8 @@ public interface AssistantMessageHandler {
 		gen.writeEndArray();
 
 		serializeMetadata(gen, msg.getMetadata());
-
-		// gen.writeArrayFieldStart( Property.MEDIA.field);
-		// for (var media : msg.getMedia()) {
-		// gen.writeObject(media);
-		// }
-		// gen.writeEndArray();
+		// ★ 序列化多模态 media（模型输出图片等），防止 cloneState 深拷贝时丢失
+		serializeMediaList(gen, msg.getMedia());
 	}
 }
 
@@ -109,11 +108,14 @@ public interface AssistantMessageHandler {
 			var text = node.findValue(Field.TEXT.name).asText();
 			var metadata = deserializeMetadata(mapper, node);
 			var requestsNode = node.findValue(Field.TOOL_CALLS.name);
+			// ★ 反序列化多模态 media
+			List<Media> mediaList = deserializeMediaList(node);
 
 			if (requestsNode.isNull() || requestsNode.isEmpty()) {
 				return AssistantMessage.builder()
 						.content(text)
 						.properties(metadata)
+						.media(mediaList)
 						.build();
 			}
 
@@ -130,6 +132,7 @@ public interface AssistantMessageHandler {
 					.content(text)
 					.properties(metadata)
 					.toolCalls(requests)
+					.media(mediaList)
 					.build();
 		}
 
