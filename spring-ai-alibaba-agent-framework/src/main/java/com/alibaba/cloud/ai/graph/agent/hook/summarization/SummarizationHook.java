@@ -174,6 +174,14 @@ public class SummarizationHook extends MessagesModelHook {
 	 */
 	private int findSafeCutoff(List<Message> messages) {
 		if (messages.size() <= messagesToKeep) {
+			// ★ 即使消息数少于 messagesToKeep，如果 token 数超限也需要截断
+			// 当对话中大量 tool call 对存在时，消息可能只有 15 条但 token 已超 10000
+			int targetCutoff = Math.max(1, messages.size() - Math.min(messagesToKeep, messages.size() / 2));
+			for (int i = targetCutoff; i >= 1; i--) {
+				if (isSafeCutoffPoint(messages, i)) {
+					return i;
+				}
+			}
 			return 0;
 		}
 
@@ -182,6 +190,17 @@ public class SummarizationHook extends MessagesModelHook {
 		// Search backwards from targetCutoff to find a safe cutoff point
 		for (int i = targetCutoff; i >= 0; i--) {
 			if (isSafeCutoffPoint(messages, i)) {
+				return i;
+			}
+		}
+
+		// ★ Fallback: 如果找不到完全安全的截断点，从 targetCutoff 开始向前找
+		// 第一个不在 tool call 对中间的点（即非 AssistantMessage with tool calls 且非 ToolResponseMessage）
+		for (int i = targetCutoff; i >= 1; i--) {
+			Message msg = messages.get(i);
+			if (!(msg instanceof AssistantMessage am && am.hasToolCalls())
+					&& !(msg instanceof ToolResponseMessage)) {
+				log.warn("No safe cutoff found, using fallback cutoff at index {} (msg type: {})", i, msg.getClass().getSimpleName());
 				return i;
 			}
 		}
