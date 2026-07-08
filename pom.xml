@@ -77,9 +77,15 @@
     </ciManagement>
 
     <distributionManagement>
+        <repository>
+            <id>maven-releases</id>
+            <name>Nexus Release Repository</name>
+            <url>https://nexus.klxz.cnpc/repository/maven-releases/</url>
+        </repository>
         <snapshotRepository>
-            <id>snapshots</id>
-            <url>http://mvnrepo.alibaba-inc.com/mvn/snapshots</url>
+            <id>maven-snapshots</id>
+            <name>Nexus Snapshots Repository</name>
+            <url>https://nexus.klxz.cnpc/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 
