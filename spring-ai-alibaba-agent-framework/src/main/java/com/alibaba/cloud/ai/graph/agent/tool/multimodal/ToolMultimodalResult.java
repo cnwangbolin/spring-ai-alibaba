@@ -123,7 +123,9 @@ public final class ToolMultimodalResult {
 	 * @param base64 Base64-encoded data (raw string, not data URL; may be null)
 	 */
 	public static Media mediaFromUrlAndBase64(String url, String base64, MimeType mimeType) {
-		return Media.builder().mimeType(mimeType).data(new MediaFormats(url, base64)).build();
+		// 2.0.1: Media.Builder.data() 不再接受自定义 Object，改用 URL 优先、base64 兜底
+		String data = (url != null && !url.isBlank()) ? url : base64;
+		return Media.builder().mimeType(mimeType).data(data).build();
 	}
 
 	/**
@@ -132,7 +134,7 @@ public final class ToolMultimodalResult {
 	 * @param base64 Base64-encoded data (raw string, not data URL)
 	 */
 	public static Media mediaFromBase64(String base64, MimeType mimeType) {
-		return Media.builder().mimeType(mimeType).data(new MediaFormats(null, base64)).build();
+		return Media.builder().mimeType(mimeType).data(base64).build();
 	}
 
 	/**
