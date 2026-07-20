@@ -257,40 +257,40 @@ public class NodeExecutor extends BaseGraphExecutor {
 					ChatResponse lastResponse = lastChatResponseRef.get();
 					final var currentMessage = response.getResult().getOutput();
 
-					if (lastResponse == null) {
-						lastChatResponseRef.set(response);
-					} else {
-						var lastOutput = lastResponse.getResult().getOutput();
-						var lastMessageText = "";
-						if (lastOutput.getText() != null) {
-							lastMessageText = lastOutput.getText();
-						}
-
-						final var currentMessageText = currentMessage.getText();
-
-						boolean mergeReasoningContent = context.getConfig().mergeReasoningContent();
-						Map<String, Object> messageMetadata = mergeReasoningContent
-								? mergeMetadataWithReasoningContent(lastOutput.getMetadata(), currentMessage.getMetadata())
-								: currentMessage.getMetadata();
-
-						var newMessage = AssistantMessage.builder()
-								.content(currentMessageText != null ? lastMessageText.concat(currentMessageText) : lastMessageText)
-								.properties(messageMetadata)
-								.toolCalls(mergeToolCalls(lastOutput.getToolCalls(), currentMessage.getToolCalls()))
-								.media(currentMessage.getMedia())
-								.build();
-
-						var newGeneration = new Generation(newMessage,
-								response.getResult().getMetadata());
-
-						ChatResponse newResponse = new ChatResponse(
-								List.of(newGeneration), response.getMetadata());
-						lastChatResponseRef.set(newResponse);
+				if (lastResponse == null) {
+					lastChatResponseRef.set(response);
+				} else {
+					var lastOutput = lastResponse.getResult().getOutput();
+					var lastMessageText = "";
+					if (lastOutput.getText() != null) {
+						lastMessageText = lastOutput.getText();
 					}
-					GraphResponse<NodeOutput> lastGraphResponse = GraphResponse
-						.of(context.buildStreamingOutput(response.getResult().getOutput(), response, nodeId, true));
-					 lastGraphResponseRef.set(lastGraphResponse);
-					return lastGraphResponse;
+
+					final var currentMessageText = currentMessage.getText();
+
+					boolean mergeReasoningContent = context.getConfig().mergeReasoningContent();
+					Map<String, Object> messageMetadata = mergeReasoningContent
+							? mergeMetadataWithReasoningContent(lastOutput.getMetadata(), currentMessage.getMetadata())
+							: currentMessage.getMetadata();
+
+					var newMessage = AssistantMessage.builder()
+							.content(currentMessageText != null ? lastMessageText.concat(currentMessageText) : lastMessageText)
+							.properties(messageMetadata)
+							.toolCalls(mergeToolCalls(lastOutput.getToolCalls(), currentMessage.getToolCalls()))
+							.media(currentMessage.getMedia())
+							.build();
+
+					var newGeneration = new Generation(newMessage,
+							response.getResult().getMetadata());
+
+					ChatResponse newResponse = new ChatResponse(
+							List.of(newGeneration), response.getMetadata());
+					lastChatResponseRef.set(newResponse);
+				}
+				GraphResponse<NodeOutput> lastGraphResponse = GraphResponse
+					.of(context.buildStreamingOutput(response.getResult().getOutput(), response, nodeId, true));
+				 lastGraphResponseRef.set(lastGraphResponse);
+				return lastGraphResponse;
 				}
 				else if (element instanceof GraphResponse) {
 					GraphResponse<NodeOutput> graphResponse = (GraphResponse<NodeOutput>) element;

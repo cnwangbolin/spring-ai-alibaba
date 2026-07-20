@@ -253,7 +253,8 @@ public class WriteTodosTool implements BiFunction<WriteTodosTool.Request, ToolCo
 			// Notify external handler
 			this.todoEventHandler.handle(request.todos);
 
-			return Response.success(SUCCESS_MESSAGE, request.todos.size());
+			// ★ Apex 扩展：Response 携带 todos，供前端 checklist 组件渲染
+			return Response.success(SUCCESS_MESSAGE, request.todos.size(), request.todos);
 		}
 		catch (ClassCastException e) {
 			return Response.error("Invalid state type - " + e.getMessage());
@@ -299,18 +300,23 @@ public class WriteTodosTool implements BiFunction<WriteTodosTool.Request, ToolCo
 	/**
 	 * Tool response with success status and message.
 	 * Provides clear feedback for both successful updates and error cases.
+	 * <p>
+	 * ★ Apex 扩展：携带 {@code todos} 字段，供前端 checklist 组件渲染。
+	 * 原版只返回 todoCount，前端无法显示具体待办内容。
+	 * </p>
 	 */
 	public record Response(
 			@JsonProperty("success") boolean success,
 			@JsonProperty("message") String message,
-			@JsonProperty("todoCount") Integer todoCount) {
+			@JsonProperty("todoCount") Integer todoCount,
+			@JsonProperty("todos") List<Todo> todos) {
 
-		public static Response success(String message, int todoCount) {
-			return new Response(true, message, todoCount);
+		public static Response success(String message, int todoCount, List<Todo> todos) {
+			return new Response(true, message, todoCount, todos);
 		}
 
 		public static Response error(String message) {
-			return new Response(false, "Error: " + message, null);
+			return new Response(false, "Error: " + message, null, null);
 		}
 
 		/**
