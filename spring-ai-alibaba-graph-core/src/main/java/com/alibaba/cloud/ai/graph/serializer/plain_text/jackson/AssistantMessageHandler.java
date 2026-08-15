@@ -90,7 +90,7 @@ public interface AssistantMessageHandler {
 		}
 		gen.writeEndArray();
 
-		serializeMetadata(gen, msg.getMetadata());
+		serializeMetadata(gen, provider, msg.getMetadata());
 		// ★ 序列化多模态 media（模型输出图片等），防止 cloneState 深拷贝时丢失
 		serializeMediaList(gen, msg.getMedia());
 	}

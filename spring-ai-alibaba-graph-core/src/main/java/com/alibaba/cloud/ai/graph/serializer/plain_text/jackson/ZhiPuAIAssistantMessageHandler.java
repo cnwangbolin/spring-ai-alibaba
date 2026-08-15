@@ -111,7 +111,7 @@ public interface ZhiPuAIAssistantMessageHandler {
 			}
 
 			Map<String, Object> metadata = (Map<String, Object>) invoke(msg, "getMetadata");
-			serializeMetadata(gen, metadata);
+			serializeMetadata(gen, provider, metadata);
 		}
 
 	}
