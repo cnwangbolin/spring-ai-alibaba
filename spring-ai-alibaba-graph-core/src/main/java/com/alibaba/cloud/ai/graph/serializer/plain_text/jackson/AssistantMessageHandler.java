@@ -17,6 +17,8 @@ package com.alibaba.cloud.ai.graph.serializer.plain_text.jackson;
 
 import org.springframework.ai.content.Media;
 
+import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonGenerator;
