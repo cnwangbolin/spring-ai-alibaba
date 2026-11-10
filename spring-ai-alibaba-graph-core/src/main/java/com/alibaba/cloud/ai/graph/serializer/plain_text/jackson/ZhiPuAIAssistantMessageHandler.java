@@ -73,7 +73,7 @@ public interface ZhiPuAIAssistantMessageHandler {
 		@Override
 		public void serialize(Object msg, JsonGenerator gen, SerializerProvider provider) throws IOException {
 			gen.writeStartObject();
-			serializeFields(msg, gen);
+			serializeFields(msg, gen, provider);
 			gen.writeEndObject();
 		}
 
@@ -81,12 +81,12 @@ public interface ZhiPuAIAssistantMessageHandler {
 		public void serializeWithType(Object msg, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer)
 				throws IOException {
 			WritableTypeId typeIdDef = typeSer.writeTypePrefix(gen, typeSer.typeId(msg, JsonToken.START_OBJECT));
-			serializeFields(msg, gen);
+			serializeFields(msg, gen, provider);
 			typeSer.writeTypeSuffix(gen, typeIdDef);
 		}
 
 		@SuppressWarnings("unchecked")
-		private void serializeFields(Object msg, JsonGenerator gen) throws IOException {
+		private void serializeFields(Object msg, JsonGenerator gen, SerializerProvider provider) throws IOException {
 			String text = (String) invoke(msg, "getText");
 			gen.writeStringField(Field.TEXT.name, text);
 
